@@ -19,10 +19,10 @@ def ice(img):
     return img
 
 if __name__ == '__main__':
-    img_path = 'data/VOC2020/JPEGImages/1_5.jpg'
+    img_path = './data/VOC2020/JPEGImages/1_5.jpg'
     img = Image.open(img_path)
     img = ice(img)
     plt.imshow(img)
     plt.title('Result')
-#    plt.imsave('result/rs_ice_filter.png', img)
+    img.save('result/ice_filter.jpg', 'JPEG')
     plt.show()

@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     plt.subplot(1, 2, 2)
     plt.imshow(img)
-    plt.imsave("result/result_darkness.jpg", img)
+    img.save("result/darkness_filter.jpg", 'JPEG')
     plt.title('result')
     plt.axis('off')
     plt.show()
