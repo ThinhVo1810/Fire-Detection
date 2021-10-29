@@ -1,17 +1,14 @@
 import os
 import os.path as osp
-
 import random
 import cv2
 import torch
+from torch._C import parse_schema
 import torch.nn as nn
 from torch.autograd import Function
 import torch.utils.data as data
 import numpy as np
-import pandas as pd
-
-import itertools
-import time
+from default_box import DefBox
 
 torch.manual_seed(1234)
 np.random.seed(1234)
@@ -64,7 +61,7 @@ def create_extras():
     return nn.ModuleList(layers)
 
 
-def create_loc_conf(bbox_aspect_num=[4, 6, 6, 6, 4, 4]):
+def create_loc_conf(num_classes=1, bbox_aspect_num=[4, 6, 6, 6, 4, 4]):
     loc_layers = []
     conf_layers = []
 
@@ -106,6 +103,58 @@ def create_loc_conf(bbox_aspect_num=[4, 6, 6, 6, 4, 4]):
 
     return nn.ModuleList(loc_layers), nn.ModuleList(conf_layers)
 
+
+configs = {
+    "num_classes" : 1, #we only have 1 class: fire
+    "input_size" : 300, #SSD 300
+    "bbox_aspect_num" : [4, 6, 6, 6, 4, 4], # ty le cho source 1 -> 6
+    "feature_maps" : [38, 19, 10, 5, 3, 1],
+    "steps" : [8, 16, 32, 64, 100, 300], # Size of default box 
+    "min_size" : [30, 60, 111, 162, 213, 264],
+    "max_size" : [60, 111, 162, 213, 264, 315],
+    "aspect_ratios" : [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
+}
+
+
+class SSD(nn.Module):
+    def __init__(self, phase, configs):
+        super(SSD, self).__init__()
+        self.phase = phase
+        self.num_classes = configs['num_classes']
+
+        # Create main modules
+        self.vgg = create_vgg()
+        self.extras = create_extras()
+        self.loc, self.conf = create_loc_conf(configs['num_classes'], configs['bbox_aspect_num'])
+        self.L2Norm = L2Norm()
+
+        # Create default box
+        dbox = DefBox(configs)
+        self.dbox_list = dbox.create_defbox()
+
+        if phase == "inference":
+            self.detect = Detect()
+
+
+def decode(loc, defbox_list):
+    '''
+    loc: [8732, 4]               (delta_x, delta_y, delta_w, delta_h)
+    defbox_list: [8732, 4]      (cx_d, cy_d, w_d, h_d)
+
+    returns: boxes[xmin, ymin, xmax, ymax]
+    '''
+
+    boxes = torch.cat((defbox_list[:, :2] + loc[:, :2]*defbox_list[:, 2:]),
+    defbox_list[:, 2:] * torch.exp(loc[:, 2:] * 0.2), dim=1)
+
+    boxes[:, :2] -= boxes[:, 2:] / 2 #calculate x_min, y_min
+    boxes[:, 2:] += boxes[:, :2] / 2 #calculate x_max, y_max
+
+    return boxes
+
 if __name__ == "__main__":
-    vgg = create_vgg()
-    print(vgg)
+#    vgg = create_vgg()
+#    print(vgg)
+
+    ssd = SSD("train", configs=configs)
+    print(ssd)
