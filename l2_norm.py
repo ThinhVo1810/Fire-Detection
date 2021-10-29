@@ -1,4 +1,5 @@
-from lib import *
+import torch
+import torch.nn as nn
 
 
 class L2Norm(nn.Module):
