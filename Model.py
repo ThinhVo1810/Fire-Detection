@@ -1,21 +1,6 @@
-import os
-import os.path as osp
-import random
-import cv2
-import torch
-from torch._C import parse_schema
-import torch.nn as nn
-from torch.autograd import Function
-import torch.utils.data as data
-import numpy as np
-from default_box import DefBox
-
-torch.manual_seed(1234)
-np.random.seed(1234)
-random.seed(1234)
-
+from lib import *
 from l2_norm import L2Norm
-
+from default_box import DefBox
 
 def create_vgg():
     layers = []
@@ -61,7 +46,7 @@ def create_extras():
     return nn.ModuleList(layers)
 
 
-def create_loc_conf(num_classes=1, bbox_aspect_num=[4, 6, 6, 6, 4, 4]):
+def create_loc_conf(bbox_aspect_num=[4, 6, 6, 6, 4, 4]):
     loc_layers = []
     conf_layers = []
 
@@ -103,58 +88,194 @@ def create_loc_conf(num_classes=1, bbox_aspect_num=[4, 6, 6, 6, 4, 4]):
 
     return nn.ModuleList(loc_layers), nn.ModuleList(conf_layers)
 
-
-configs = {
+cfg = {
     "num_classes" : 1, #we only have 1 class: fire
     "input_size" : 300, #SSD 300
     "bbox_aspect_num" : [4, 6, 6, 6, 4, 4], # ty le cho source 1 -> 6
     "feature_maps" : [38, 19, 10, 5, 3, 1],
-    "steps" : [8, 16, 32, 64, 100, 300], # Size of default box 
+    "steps" : [8, 16, 32, 64, 100, 300], # Size of default box
     "min_size" : [30, 60, 111, 162, 213, 264],
     "max_size" : [60, 111, 162, 213, 264, 315],
     "aspect_ratios" : [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
 }
 
-
 class SSD(nn.Module):
-    def __init__(self, phase, configs):
+    def __init__(self, phase, cfg):
         super(SSD, self).__init__()
         self.phase = phase
-        self.num_classes = configs['num_classes']
+        self.num_classes = cfg['num_classes']
 
         # Create main modules
         self.vgg = create_vgg()
         self.extras = create_extras()
-        self.loc, self.conf = create_loc_conf(configs['num_classes'], configs['bbox_aspect_num'])
+        self.loc, self.conf = create_loc_conf(cfg['num_classes'], cfg['bbox_aspect_num'])
         self.L2Norm = L2Norm()
 
         # Create default box
-        dbox = DefBox(configs)
+        dbox = DefBox(cfg)
         self.dbox_list = dbox.create_defbox()
 
         if phase == "inference":
             self.detect = Detect()
 
+    def forward(self, x):
+        sources = list()
+        loc = list()
+        conf = list()
+
+        for k in range(23):
+            x = self.vgg[k][x]
+
+        # source 1
+        source1 = self.L2Norm(x)
+        sources.append(source1)
+
+        for k in range(23, len(self.vgg)):
+            x = self.vgg[k](x)
+
+         # source 2
+        sources.append(x)
+
+        # source 3-6
+        for k, v in enumerate(self.extras):
+            x = nn.ReLU(v(x), inplace = True)
+            if k % 2 == 1:
+                sources.append(x)
+
+        for (x, l, c) in zip(sources, self.loc, self.conf):
+            # Data có dạng (batch_size, 4*aspect_ratio_num, featuremap_height, featuremap_width)
+            # aspect_ratio_num = 4, 6, ...
+            # -> (batch_size, featuremap_height, featuremap_width, 4*aspect_ratio_num)
+            loc.append(l(x).premute(0, 2, 3, 1).contiguous())
+            conf.append(c(x).premute(0, 2, 3, 1).contiguous())
+
+        loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)            #(batch_size, 34928)
+        conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)          # (btach_size, 8732)
+
+        loc = loc.view(loc.size(0), -1, 4)      # (batch_size, 8732, 4)
+        conf = conf.view(conf.size(0), -1, self.num_classes)        # (batch_size, 8732, 1)
+
+        output = (loc, conf, self.dbox_list)
+
+        if phase == "inference":
+            return self.detect(output[0], output[1], output[2])
+        else:
+            return output
 
 def decode(loc, defbox_list):
     '''
     loc: [8732, 4]               (delta_x, delta_y, delta_w, delta_h)
     defbox_list: [8732, 4]      (cx_d, cy_d, w_d, h_d)
-
     returns: boxes[xmin, ymin, xmax, ymax]
     '''
-
     boxes = torch.cat((defbox_list[:, :2] + loc[:, :2]*defbox_list[:, 2:]),
-    defbox_list[:, 2:] * torch.exp(loc[:, 2:] * 0.2), dim=1)
+    defbox_list[:, 2:] * torch.exp(loc[:, 2:] * 0.2), dim = 1)
 
-    boxes[:, :2] -= boxes[:, 2:] / 2 #calculate x_min, y_min
-    boxes[:, 2:] += boxes[:, :2] / 2 #calculate x_max, y_max
+    boxes[:, :2] -= boxes[:, 2:] / 2 # calculate x_min, y_min
+    boxes[:, 2:] += boxes[:, :2] / 2 # calculate x_max, y_max
 
     return boxes
 
-if __name__ == "__main__":
-#    vgg = create_vgg()
-#    print(vgg)
+def nms(boxes, scores, overlap = 0.45, top_k = 200):
+    """
+    boxes: [num_box, 4] # có 8732 num_box
+    scores: [num_box]
+    """
+    count = 0
+    keep = scores.new(scores.size(0)).zero_().long()
 
-    ssd = SSD("train", configs=configs)
-    print(ssd)
+    # boxes:
+    x1 = boxes[:, 0]
+    y1 = boxes[:, 1]
+    x2 = boxes[:, 2]
+    y2 = boxes[:, 3]
+
+    # boxes area
+    area = torch.mul(x2 - x1, y2 - y1, )
+
+    tmp_x1 = boxes.new()
+    tmp_y1 = boxes.new()
+    tmp_x2 = boxes.new()
+    tmp_y2 = boxes.new()
+    tmp_w = boxes.new()
+    tmp_h = boxes.new()
+
+    value, idx = scores.sort(0)
+    idx = idx[-top_k:]      # lấy 200 cái bdbox có độ tự tin cao nhất
+
+    while idx.numel() > 0:
+        i = idx[-1]         # id của box có độ tự tin cao nhất
+        keep[count] = i
+        count += 1
+
+        if id.size(0) == 1:
+            break
+        idx = idx[:, -1]    # id của các boxes ngoại trừ box có độ tự tin cao nhất
+
+        #information boxes
+        torch.index_select(x1, 0, idx, out = tmp_x1)       # lấy ra những thằng có gt trong khoảng idx trong x1
+        torch.index_select(y1, 0, idx, out = tmp_y1)
+        torch.index_select(x2, 0, idx, out = tmp_x2)
+        torch.index_select(y2, 0, idx, out = tmp_y2)
+
+        tmp_x1 = torch.clamp(tmp_x1, min = x1[i])           # = x1[i] nếu tmp_x1 < x[i]
+        tmp_y1 = torch.clamp(tmp_y1, min = y1[i])
+        tmp_x2 = torch.clamp(tmp_x2, max = x2[i])
+        tmp_y2 = torch.clamp(tmp_y2, max = y2[i])           # = y2[i] nếu tmp_y2 > y2[i]
+
+        # chuyển về tensor có size sao cho index giảm đi 1
+        tmp_w.resize_as_(tmp_x2)
+        tmp_h.resize_as_(tmp_y2)
+
+        tmp_w = tmp_x2 - tmp_x1
+        tmp_h = tmp_y2 - tmp_y1
+
+        tmp_w = torch.clamp(tmp_w, min = 0.0)               # đưa phần tử < 0 về 0
+        tmp_h = torch.clamp(tmp_h, min = 0.0)
+
+        # dien tich overlap
+        inter = tmp_w * tmp_h                               # dien tich phan trung nhau
+        others_area = torch.index_select(area, 0, idx)      # dien tich cua cac bbox con lai
+        union = area[i] + others_area - inter
+
+        iou = inter / union
+
+        idx = idx[iou.le(overlap)]                          # giu cac box co idx nho hon 0.45
+
+    return keep, count
+
+class Detect(Function):
+    def __init__(self, conf_thresh = 0.01, top_k = 200, nms_thresh = 0.45):
+        self.softmax = nn.Softmax(dim = -1)
+        self.conf_thresh = conf_thresh
+        self.top_k = top_k
+        self.nms_thresh = nms_thresh
+
+    def forward(self, loc_data, conf_data, dbox_list):
+        num_batch = loc_data.size(0)
+        num_dbox = loc_data.size(1)                     # tra ve 8732 dbox
+        num_class = conf_data.size(2)                   # tra ve so class la 1
+
+        conf_data = self.softmax(conf_data)             # tinh xac suat, dang co dinh dang (btach_num, 8732, 1)
+        conf_preds = conf_data.traspose(2,1)            # thanh (batch_num, num_class, num_dbox)
+
+        output = torch.zeros(num_batch, num_class, self.top_k, 5)
+        #xu li tung anh trong 1 batch
+        for i in range(num_batch):
+            # tinh bbox tu offset information va default box
+            decode_boxes = decode(loc_data[i], dbox_list)
+
+            # copy conf score cua anh thu i
+            conf_scores = conf_preds[i].clone()
+
+            c_mask = conf_preds[0].gt(self.conf_thresh)     # chi lay nhung conf > 0.01
+            scores = conf_preds[0][c_mask]                  # CHỖ NÀY CẦN XEM LẠI
+
+            l_mask = c_mask.unsquzee(1).expand_as(decode_boxes)     # để đưa chiều về giống chiều của decode_box
+
+            boxes = decode_boxes[l_mask].view(-1, 4)
+            ids, count = nms(boxes, scores, self.nms_thresh, self.top_k)
+
+            output[i, 0, :count] = torch.cat((scores[ids[:count]].unsquzee(1), boxes[ids[:count]]), 1)
+
+        return output
