@@ -88,7 +88,7 @@ def create_loc_conf(bbox_aspect_num=[4, 6, 6, 6, 4, 4]):
 
     return nn.ModuleList(loc_layers), nn.ModuleList(conf_layers)
 
-configs = {
+cfg = {
     "num_classes" : 1, #we only have 1 class: fire
     "input_size" : 300, #SSD 300
     "bbox_aspect_num" : [4, 6, 6, 6, 4, 4], # ty le cho source 1 -> 6
@@ -100,19 +100,19 @@ configs = {
 }
 
 class SSD(nn.Module):
-    def __init__(self, phase, configs):
+    def __init__(self, phase, cfg):
         super(SSD, self).__init__()
         self.phase = phase
-        self.num_classes = configs['num_classes']
+        self.num_classes = cfg['num_classes']
 
         # Create main modules
         self.vgg = create_vgg()
         self.extras = create_extras()
-        self.loc, self.conf = create_loc_conf(configs['num_classes'], configs['bbox_aspect_num'])
+        self.loc, self.conf = create_loc_conf(cfg['num_classes'], cfg['bbox_aspect_num'])
         self.L2Norm = L2Norm()
 
         # Create default box
-        dbox = DefBox(configs)
+        dbox = DefBox(cfg)
         self.dbox_list = dbox.create_defbox()
 
         if phase == "inference":
