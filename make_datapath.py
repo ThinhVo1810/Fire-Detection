@@ -44,6 +44,6 @@ if __name__ == '__main__':
     print(val_img_list[0])
 
     # Show test imgage
-    img = plt.imread(val_img_list[0])
+    img = plt.imread(val_img_list[5])
     plt.imshow(img)
     plt.show()

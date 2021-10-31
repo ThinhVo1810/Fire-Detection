@@ -46,7 +46,7 @@ def create_extras():
     return nn.ModuleList(layers)
 
 
-def create_loc_conf(bbox_aspect_num=[4, 6, 6, 6, 4, 4]):
+def create_loc_conf(num_classes=1,bbox_aspect_num=[4, 6, 6, 6, 4, 4]):
     loc_layers = []
     conf_layers = []
 
@@ -157,7 +157,7 @@ class SSD(nn.Module):
 
         output = (loc, conf, self.dbox_list)
 
-        if phase == "inference":
+        if self.phase == "inference":
             return self.detect(output[0], output[1], output[2])
         else:
             return output

@@ -1,12 +1,12 @@
 from lib import *
 from make_datapath import make_datapath_list
-from custom_dataset import MyDataset
+from custom_dataset import MyDataset, my_collate_fn
 from transform import DataTransform
 from extract_info_annotation import Anno_xml
 from Model import SSD
 from multiboxloss import MultiBoxLoss
 
-device = torch.device('gpu' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 torch.backends.cudnn.benchmark = True
 
 # dataloader
