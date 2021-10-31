@@ -19,8 +19,8 @@ class MultiBoxLoss(nn.Module):
         num_dbox = loc_data_size(1)
         num_classes = loc_data.size(2)
 
-        conf_t_label = torch.LongTensor(num_batch, num_box).to(device)
-        loc_t = torch.Tensor(num_batch, num_dbox, 4)
+        conf_t_label = torch.LongTensor(num_batch, num_box).to(self.device)
+        loc_t = torch.Tensor(num_batch, num_dbox, 4).to(self.device)
 
         for idx in range(num_batch):
             truths = targets[idx][:, :-1].to(device)  #(xmin, ymin, xmax, ymax)
