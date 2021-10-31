@@ -23,7 +23,7 @@ class MultiBoxLoss(nn.Module):
         loc_t = torch.Tensor(num_batch, num_dbox, 4)
 
         for idx in range(num_batch):
-            truths = targets[idx][:, :, :, -1].to(device)  #(xmin, ymin, xmax, ymax)
+            truths = targets[idx][:, :-1].to(device)  #(xmin, ymin, xmax, ymax)
             labels = targets[idx][:, -1].to(device)     #label
 
             dbox = dbox_list.to(device)
