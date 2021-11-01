@@ -1,3 +1,4 @@
+from os import write
 from lib import *
 from make_datapath import make_datapath_list
 from custom_dataset import MyDataset, my_collate_fn
@@ -5,6 +6,8 @@ from transform import DataTransform
 from extract_info_annotation import Anno_xml
 from model import SSD
 from multiboxloss import MultiBoxLoss
+from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 torch.backends.cudnn.benchmark = True
@@ -60,9 +63,10 @@ criterion = MultiBoxLoss(jaccard_threshold=0.5, neg_pos=3, device=device)
 
 # optimizer
 optimizer = optim.SGD(net.parameters(), lr=1e-3, momentum=0.9, weight_decay=5e-4)
+writer = SummaryWriter()
 
 # training, validation
-def train_model(net, dataloader_dict, criterion, optimizer, num_epochs):
+def train_model(net, dataloader_dict, criterion, optimizer, writer, num_epochs):
     # move network to GPU
     net.to(device)
 
@@ -70,12 +74,12 @@ def train_model(net, dataloader_dict, criterion, optimizer, num_epochs):
     epoch_train_loss = 0.0
     epoch_val_loss = 0.0
     logs = []
-    for epoch in range(num_epochs+1):
+    for epoch in tqdm(range(num_epochs+1)):
         t_epoch_start = time.time()
         t_iter_start = time.time()
-        print("---"*20)
+        print("---"*50)
         print("Epoch {}/{}".format(epoch+1, num_epochs))
-        print("---"*20)
+        print("---"*50)
         for phase in ["train", "val"]:
             if phase == "train":
                 net.train()
@@ -83,7 +87,7 @@ def train_model(net, dataloader_dict, criterion, optimizer, num_epochs):
             else:
                 if (epoch+1) % 10 == 0:
                     net.eval()
-                    print("---"*10)
+                    print("---"*20)
                     print("(Validation)")
                 else:
                     continue
@@ -98,6 +102,7 @@ def train_model(net, dataloader_dict, criterion, optimizer, num_epochs):
                     outputs = net(images)
                     loss_l, loss_c = criterion(outputs, targets)
                     loss = loss_l + loss_c
+                    writer.add_scalar('Train Loss/Epoch', loss, epoch)
 
                     if phase == "train":
                         loss.backward() # calculate gradient
@@ -107,15 +112,20 @@ def train_model(net, dataloader_dict, criterion, optimizer, num_epochs):
                         if (iteration % 10) == 0:
                             t_iter_end = time.time()
                             duration = t_iter_end - t_iter_start
-                            print("Iteration {} || Loss: {:.4f} || 10iter: {:.4f} sec".format(iteration, loss.item(), duration))
+                            print("Iteration {} || Loss: {:.4f} || 10iter: {:.4f} sec".format(iteration, loss.item(), 
+                                                                                                            duration))
+
                             t_iter_start = time.time()
                         epoch_train_loss += loss.item()
                         iteration += 1
                     else:
+                        writer.add_scalar('Val Loss/Epoch', loss, epoch)
                         epoch_val_loss += loss.item()
         t_epoch_end = time.time()
         print("---"*20)
-        print("Epoch {} || epoch_train_loss: {:.4f} || Epoch_val_loss: {:.4f}".format(epoch+1, epoch_train_loss, epoch_val_loss))
+        print("Epoch {} || epoch_train_loss: {:.4f} || Epoch_val_loss: {:.4f}".format(epoch+1, epoch_train_loss,
+         epoch_val_loss))
+
         print("Duration: {:.4f} sec".format(t_epoch_end - t_epoch_start))
         t_epoch_start = time.time()
 
@@ -129,5 +139,9 @@ def train_model(net, dataloader_dict, criterion, optimizer, num_epochs):
         if ((epoch+1) % 10 == 0):
             torch.save(net.state_dict(), "./data/weights/ssd300_" + str(epoch+1) + ".pth")
 
+    writer.flush()
+    writer.close()
+
+
 num_epochs = 100
-train_model(net, dataloader_dict, criterion, optimizer, num_epochs=num_epochs)
+train_model(net, dataloader_dict, criterion, optimizer, writer, num_epochs=num_epochs)
