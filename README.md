@@ -7,6 +7,12 @@ cd Fire-Detection
 
 ## Prepare data
 
+### Download data
+
+```
+python prepare_data.py
+```
+
 Tải về mạng vgg16
 
 ```
