@@ -5,7 +5,7 @@ from box_utils import match
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 class MultiBoxLoss(nn.Module):
-    def __init__(self, jaccard_threshold = 0.5, neg_pos = 3, device=None):       # CHÚ Ý CHỖ NÀY
+    def __init__(self, jaccard_threshold = 0.5, neg_pos = 3, device="cpu"):       # CHÚ Ý CHỖ NÀY
         super(MultiBoxLoss, self).__init__()
         self.jaccard_threshold = jaccard_threshold
         self.neg_pos = neg_pos
