@@ -1,4 +1,9 @@
-# Fire-Detection
+# Fire Detection using SSD model
+
+```
+git clone https://github.com/ThinhVo1810/Fire-Detection.git
+cd Fire-Detection
+```
 
 ## Prepare data
 
