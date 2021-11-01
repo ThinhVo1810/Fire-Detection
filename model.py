@@ -90,7 +90,7 @@ def create_loc_conf(num_classes=1,bbox_aspect_num=[4, 6, 6, 6, 4, 4]):
     return nn.ModuleList(loc_layers), nn.ModuleList(conf_layers)
 
 cfg = {
-    "num_classes" : 1, #we only have 1 class: fire
+    "num_classes" : 2, #we only have 1 class: fire
     "input_size" : 300, #SSD 300
     "bbox_aspect_num" : [4, 6, 6, 6, 4, 4], # ty le cho source 1 -> 6
     "feature_maps" : [38, 19, 10, 5, 3, 1],
