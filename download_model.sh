@@ -1,4 +1,3 @@
-mkdir data
 cd data
 mkdir weights
 cd weights
