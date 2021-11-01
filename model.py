@@ -275,12 +275,12 @@ class Detect(Function):
                 if scores.nelement() == 0: # numel
                     continue
 
-                l_mask = c_mask.unsquzee(1).expand_as(decode_boxes)     # để đưa chiều về giống chiều của decode_box
+                l_mask = c_mask.unsqueeze(1).expand_as(decode_boxes)     # để đưa chiều về giống chiều của decode_box
 
                 boxes = decode_boxes[l_mask].view(-1, 4)
                 ids, count = nms(boxes, scores, self.nms_thresh, self.top_k)
 
-                output[i, cl, :count] = torch.cat((scores[ids[:count]].unsquzee(1), boxes[ids[:count]]), 1)
+                output[i, cl, :count] = torch.cat((scores[ids[:count]].unsqueeze(1), boxes[ids[:count]]), 1)
 
         return output
 
