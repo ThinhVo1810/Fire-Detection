@@ -1,6 +1,7 @@
 from lib import *
 from l2_norm import L2Norm
 from default_box import DefBox
+import torch.nn.functional as F
 
 def create_vgg():
     layers = []
@@ -138,7 +139,7 @@ class SSD(nn.Module):
 
         # source 3-6
         for k, v in enumerate(self.extras):
-            x = nn.ReLU(v(x), inplace = True)
+            x = F.relu(v(x), inplace = True)
             if k % 2 == 1:
                 sources.append(x)
 
@@ -146,8 +147,8 @@ class SSD(nn.Module):
             # Data có dạng (batch_size, 4*aspect_ratio_num, featuremap_height, featuremap_width)
             # aspect_ratio_num = 4, 6, ...
             # -> (batch_size, featuremap_height, featuremap_width, 4*aspect_ratio_num)
-            loc.append(l(x).premute(0, 2, 3, 1).contiguous())
-            conf.append(c(x).premute(0, 2, 3, 1).contiguous())
+            loc.append(l(x).permute(0, 2, 3, 1).contiguous())
+            conf.append(c(x).permute(0, 2, 3, 1).contiguous())
 
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)            #(batch_size, 34928)
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)          # (btach_size, 8732)
