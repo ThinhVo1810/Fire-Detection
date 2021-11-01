@@ -124,7 +124,7 @@ class SSD(nn.Module):
         conf = list()
 
         for k in range(23):
-            x = self.vgg[k][x]
+            x = self.vgg[k](x)
 
         # source 1
         source1 = self.L2Norm(x)
@@ -191,7 +191,7 @@ def nms(boxes, scores, overlap = 0.45, top_k = 200):
     y2 = boxes[:, 3]
 
     # boxes area
-    area = torch.mul(x2 - x1, y2 - y1, )
+    area = torch.mul(x2 - x1, y2 - y1)
 
     tmp_x1 = boxes.new()
     tmp_y1 = boxes.new()
@@ -257,7 +257,7 @@ class Detect(Function):
         num_class = conf_data.size(2)                   # tra ve so class la 1
 
         conf_data = self.softmax(conf_data)             # tinh xac suat, dang co dinh dang (btach_num, 8732, 1)
-        conf_preds = conf_data.traspose(2,1)            # thanh (batch_num, num_class, num_dbox)
+        conf_preds = conf_data.transpose(2,1)            # thanh (batch_num, num_class, num_dbox)
 
         output = torch.zeros(num_batch, num_class, self.top_k, 5)
         #xu li tung anh trong 1 batch
@@ -268,14 +268,30 @@ class Detect(Function):
             # copy conf score cua anh thu i
             conf_scores = conf_preds[i].clone()
 
-            c_mask = conf_preds[0].gt(self.conf_thresh)     # chi lay nhung conf > 0.01
-            scores = conf_preds[0][c_mask]                  # CHỖ NÀY CẦN XEM LẠI
+            for cl in range(1, num_class):
+                c_mask = conf_preds[0].gt(self.conf_thresh)     # chi lay nhung conf > 0.01
+                scores = conf_preds[0][c_mask]                  # CHỖ NÀY CẦN XEM LẠI
+                if scores.nelement() == 0: # numel
+                    continue
 
-            l_mask = c_mask.unsquzee(1).expand_as(decode_boxes)     # để đưa chiều về giống chiều của decode_box
+                l_mask = c_mask.unsquzee(1).expand_as(decode_boxes)     # để đưa chiều về giống chiều của decode_box
 
-            boxes = decode_boxes[l_mask].view(-1, 4)
-            ids, count = nms(boxes, scores, self.nms_thresh, self.top_k)
+                boxes = decode_boxes[l_mask].view(-1, 4)
+                ids, count = nms(boxes, scores, self.nms_thresh, self.top_k)
 
-            output[i, 0, :count] = torch.cat((scores[ids[:count]].unsquzee(1), boxes[ids[:count]]), 1)
+                output[i, cl, :count] = torch.cat((scores[ids[:count]].unsquzee(1), boxes[ids[:count]]), 1)
 
         return output
+
+
+if __name__ == "__main__":
+#    vgg = create_vgg()
+#    print(vgg)
+     extras = create_extras()
+     print(extras)
+     loc, conf = create_loc_conf()
+     print(loc)
+     print(conf)
+
+     ssd = SSD(phase="train", cfg=cfg)
+     print(ssd)
