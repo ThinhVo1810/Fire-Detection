@@ -270,8 +270,8 @@ class Detect(Function):
             conf_scores = conf_preds[i].clone()
 
             for cl in range(1, num_class):
-                c_mask = conf_preds[0].gt(self.conf_thresh)     # chi lay nhung conf > 0.01
-                scores = conf_preds[0][c_mask]                  # CHỖ NÀY CẦN XEM LẠI
+                c_mask = conf_preds[cl].gt(self.conf_thresh)     # chi lay nhung conf > 0.01
+                scores = conf_preds[cl][c_mask]                  # CHỖ NÀY CẦN XEM LẠI
                 if scores.nelement() == 0: # numel
                     continue
 
