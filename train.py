@@ -105,8 +105,9 @@ def train_model(net, dataloader_dict, criterion, optimizer, writer, num_epochs):
                     #writer.add_scalar('Train Loss/Epoch', loss, epoch)
 
                     if phase == "train":
-                        writer.add_scalar('Train Loss/Epoch', loss, epoch)
+                        #writer.add_scalar('Train Loss/Epoch', loss, epoch)
                         loss.backward() # calculate gradient
+                        writer.add_scalar('Train Loss/Epoch', loss, epoch)
                         nn.utils.clip_grad_value_(net.parameters(), clip_value=2.0)
                         optimizer.step() # update parameters
 
