@@ -3,7 +3,7 @@ from model import SSD
 from transform import DataTransform
 
 
-classes = ["fires"]
+classes = ["fire"]
 
 cfg = {
     "num_classes": 2, #VOC data include 20 class + 1 background class
@@ -17,13 +17,13 @@ cfg = {
 }
 
 net = SSD(phase="inference", cfg=cfg)
-net_weights = torch.load("./data/weights/ssd300_100.pth", map_location={"cuda:0":"cpu"})
+net_weights = torch.load("./weights/ssd300_20.pth", map_location={"cuda:0":"cpu"})
 net.load_state_dict(net_weights)
 
 def predict(img_file_path):
     img = cv2.imread(img_file_path)
 
-    color_mean = ( 8, 17, 32)
+    color_mean = (8, 17, 32)
     input_size = 300
     transform = DataTransform(input_size, color_mean)
 
@@ -32,8 +32,8 @@ def predict(img_file_path):
     img_tensor = torch.from_numpy(img_tranformed[:,:,(2,1,0)]).permute(2,0,1)
 
     net.eval()
-    input = img_tensor.unsqueeze(0) #(1, 3, 300, 300)
-    output = net(input)
+    inputs = img_tensor.unsqueeze(0) #(1, 3, 300, 300)
+    output = net(inputs)
 
     plt.figure(figsize=(10, 10))
     colors = [(255,0,0), (0,255,0), (0,0,255)]
@@ -63,5 +63,5 @@ def predict(img_file_path):
 
 
 if __name__ == "__main__":
-    img_file_path = "./data/*.jpg"
+    img_file_path = "/home/huynth/ImageProcessing/result/Median.jpg"
     predict(img_file_path)

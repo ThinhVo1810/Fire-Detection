@@ -33,3 +33,7 @@ chmod +x download_model.sh
 python train.py
 ```
 
+## Load Tensorboard
+```
+tensorboard --logdir=runs/
+```
