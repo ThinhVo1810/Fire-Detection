@@ -79,7 +79,7 @@ def train_model(net, dataloader_dict, criterion, optimizer, writer, num_epochs):
         t_iter_start = time.time()
         print("---"*20)
         print("Epoch {}/{}".format(epoch+1, num_epochs))
-        print("---"*50)
+        print("---"*20)
         for phase in ["train", "val"]:
             if phase == "train":
                 net.train()
