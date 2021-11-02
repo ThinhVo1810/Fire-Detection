@@ -154,7 +154,7 @@ class SSD(nn.Module):
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)          # (btach_size, 8732)
 
         loc = loc.view(loc.size(0), -1, 4)      # (batch_size, 8732, 4)
-        conf = conf.view(conf.size(0), -1, self.num_classes)        # (batch_size, 8732, 1)
+        conf = conf.view(conf.size(0), -1, self.num_classes)        # (batch_size, 8732, 2)
 
         output = (loc, conf, self.dbox_list)
 
@@ -270,8 +270,8 @@ class Detect(Function):
             conf_scores = conf_preds[i].clone()
 
             for cl in range(1, num_class):
-                c_mask = conf_preds[0].gt(self.conf_thresh)     # chi lay nhung conf > 0.01
-                scores = conf_preds[0][c_mask]                  # CHỖ NÀY CẦN XEM LẠI
+                c_mask = conf_preds[cl].gt(self.conf_thresh)     # chi lay nhung conf > 0.01
+                scores = conf_preds[cl][c_mask]                  # CHỖ NÀY CẦN XEM LẠI
                 if scores.nelement() == 0: # numel
                     continue
 

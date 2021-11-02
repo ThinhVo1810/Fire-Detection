@@ -44,7 +44,7 @@ cfg = {
 }
 
 net = SSD(phase = "train", cfg = cfg)
-vgg_weights = torch.load("./data/weights/vgg16_reducedfc.pth")      # gọi file
+vgg_weights = torch.load("./weights/vgg16_reducedfc.pth")      # gọi file
 net.vgg.load_state_dict(vgg_weights)
 
 def weights_init(m):
