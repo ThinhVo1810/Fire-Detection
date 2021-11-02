@@ -102,9 +102,10 @@ def train_model(net, dataloader_dict, criterion, optimizer, writer, num_epochs):
                     outputs = net(images)
                     loss_l, loss_c = criterion(outputs, targets)
                     loss = loss_l + loss_c
-                    writer.add_scalar('Train Loss/Epoch', loss, epoch)
+                    #writer.add_scalar('Train Loss/Epoch', loss, epoch)
 
                     if phase == "train":
+                        writer.add_scalar('Train Loss/Epoch', loss, epoch)
                         loss.backward() # calculate gradient
                         nn.utils.clip_grad_value_(net.parameters(), clip_value=2.0)
                         optimizer.step() # update parameters
@@ -121,23 +122,23 @@ def train_model(net, dataloader_dict, criterion, optimizer, writer, num_epochs):
                     else:
                         writer.add_scalar('Val Loss/Epoch', loss, epoch)
                         epoch_val_loss += loss.item()
-    t_epoch_end = time.time()
-    print("---"*20)
-    print("Epoch {} || epoch_train_loss: {:.4f} || Epoch_val_loss: {:.4f}".format(epoch+1, epoch_train_loss,
+        t_epoch_end = time.time()
+        print("---"*20)
+        print("Epoch {} || Epoch_train_loss: {:.4f} || Epoch_val_loss: {:.4f}".format(epoch+1, epoch_train_loss,
          epoch_val_loss))
 
-    print("Duration: {:.4f} sec".format(t_epoch_end - t_epoch_start))
-    t_epoch_start = time.time()
+        print("Duration: {:.4f} sec".format(t_epoch_end - t_epoch_start))
+        t_epoch_start = time.time()
 
-    log_epoch = {"epoch": epoch+1, "train_loss": epoch_train_loss, "val_loss": epoch_val_loss}
-    logs.append(log_epoch)
+        log_epoch = {"epoch": epoch+1, "train_loss": epoch_train_loss, "val_loss": epoch_val_loss}
+        logs.append(log_epoch)
 
-    df = pd.DataFrame(logs)
-    df.to_csv("./data/ssd_logs.csv")
-    epoch_train_loss = 0.0
-    epoch_val_loss = 0.0
-    if ((epoch+1) % 10 == 0):
-        torch.save(net.state_dict(), "./data/weights/ssd300_" + str(epoch+1) + ".pth")
+        df = pd.DataFrame(logs)
+        df.to_csv("./data/ssd_logs.csv")
+        epoch_train_loss = 0.0
+        epoch_val_loss = 0.0
+        if ((epoch+1) % 10 == 0):
+            torch.save(net.state_dict(), "./data/weights/ssd300_" + str(epoch+1) + ".pth")
 
     writer.flush()
     writer.close()
