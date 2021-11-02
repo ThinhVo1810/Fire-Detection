@@ -144,5 +144,5 @@ def train_model(net, dataloader_dict, criterion, optimizer, writer, num_epochs):
     writer.close()
 
 
-num_epochs = 100
+num_epochs = 20
 train_model(net, dataloader_dict, criterion, optimizer, writer, num_epochs=num_epochs)
