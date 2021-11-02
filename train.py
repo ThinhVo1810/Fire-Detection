@@ -138,7 +138,7 @@ def train_model(net, dataloader_dict, criterion, optimizer, writer, num_epochs):
         epoch_train_loss = 0.0
         epoch_val_loss = 0.0
         if ((epoch+1) % 10 == 0):
-            torch.save(net.state_dict(), "./data/weights/ssd300_" + str(epoch+1) + ".pth")
+            torch.save(net.state_dict(), "./weights/ssd300_" + str(epoch+1) + ".pth")
 
     writer.flush()
     writer.close()
