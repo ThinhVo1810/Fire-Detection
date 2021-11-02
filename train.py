@@ -33,7 +33,7 @@ dataloader_dict = {"train": train_dataloader, "val": val_dataloader}
 
 # network
 cfg = {
-    "num_classes": 1, #VOC data include 20 class + 1 background class
+    "num_classes": 2, #VOC data include 20 class + 1 background class
     "input_size": 300, #SSD300
     "bbox_aspect_num": [4, 6, 6, 6, 4, 4], # Tỷ lệ khung hình cho source1->source6`
     "feature_maps": [38, 19, 10, 5, 3, 1],
