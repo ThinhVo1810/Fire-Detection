@@ -77,7 +77,7 @@ def train_model(net, dataloader_dict, criterion, optimizer, writer, num_epochs):
     for epoch in tqdm(range(num_epochs+1)):
         t_epoch_start = time.time()
         t_iter_start = time.time()
-        print("---"*50)
+        print("---"*20)
         print("Epoch {}/{}".format(epoch+1, num_epochs))
         print("---"*50)
         for phase in ["train", "val"]:
@@ -120,8 +120,8 @@ def train_model(net, dataloader_dict, criterion, optimizer, writer, num_epochs):
                         epoch_train_loss += loss.item()
                         iteration += 1
                     else:
-                        writer.add_scalar('Val Loss/Epoch', loss, epoch)
                         epoch_val_loss += loss.item()
+                        writer.add_scalar('Val Loss/Epoch', loss, epoch)
         t_epoch_end = time.time()
         print("---"*20)
         print("Epoch {} || Epoch_train_loss: {:.4f} || Epoch_val_loss: {:.4f}".format(epoch+1, epoch_train_loss,
