@@ -169,7 +169,7 @@ def decode(loc, defbox_list):
     defbox_list: [8732, 4]      (cx_d, cy_d, w_d, h_d)
     returns: boxes[xmin, ymin, xmax, ymax]
     '''
-    boxes = torch.cat((defbox_list[:, :2] + loc[:, :2]*defbox_list[:, 2:]),
+    boxes = torch.cat((defbox_list[:, :2] + 0.1*loc[:, :2]*defbox_list[:, 2:]),
     defbox_list[:, 2:] * torch.exp(loc[:, 2:] * 0.2), dim = 1)
 
     boxes[:, :2] -= boxes[:, 2:] / 2 # calculate x_min, y_min
@@ -246,21 +246,21 @@ def nms(boxes, scores, overlap = 0.45, top_k = 200):
     return keep, count
 
 class Detect(Function):
-    def __init__(self, conf_thresh = 0.01, top_k = 200, nms_thresh = 0.45):
+    def __init__(self, conf_thresh = 0.01, top_k = 200, nsm_thresh = 0.45):
         self.softmax = nn.Softmax(dim = -1)
         self.conf_thresh = conf_thresh
         self.top_k = top_k
-        self.nms_thresh = nms_thresh
+        self.nms_thresh = nsm_thresh
 
     def forward(self, loc_data, conf_data, dbox_list):
         num_batch = loc_data.size(0)
         num_dbox = loc_data.size(1)                     # tra ve 8732 dbox
-        num_class = conf_data.size(2)                   # tra ve so class la 1
+        num_classe = conf_data.size(2)                   # tra ve so class la 1
 
         conf_data = self.softmax(conf_data)             # tinh xac suat, dang co dinh dang (btach_num, 8732, 1)
         conf_preds = conf_data.transpose(2,1)            # thanh (batch_num, num_class, num_dbox)
 
-        output = torch.zeros(num_batch, num_class, self.top_k, 5)
+        output = torch.zeros(num_batch, num_classe, self.top_k, 5)
         #xu li tung anh trong 1 batch
         for i in range(num_batch):
             # tinh bbox tu offset information va default box
@@ -270,8 +270,8 @@ class Detect(Function):
             conf_scores = conf_preds[i].clone()
 
             for cl in range(1, num_class):
-                c_mask = conf_preds[cl].gt(self.conf_thresh)     # chi lay nhung conf > 0.01
-                scores = conf_preds[cl][c_mask]                  # CHỖ NÀY CẦN XEM LẠI
+                c_mask = conf_scores[cl].gt(self.conf_thresh)     # chi lay nhung conf > 0.01
+                scores = conf_scores[cl][c_mask]                  # CHỖ NÀY CẦN XEM LẠI
                 if scores.nelement() == 0: # numel
                     continue
 
