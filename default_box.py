@@ -31,8 +31,8 @@ class DefBox():
             for i, j in itertools.product(range(f), repeat=2):
                 f_k = self.img_size / self.steps[k]
 
-                cx = (i + 0.5) / f_k
-                cy = (j + 0.5) / f_k
+                cx = (j + 0.5) / f_k        # MỚI SỬA
+                cy = (i + 0.5) / f_k
 
                 # Small box
                 s_k = self.min_size[k] / self.img_size 
