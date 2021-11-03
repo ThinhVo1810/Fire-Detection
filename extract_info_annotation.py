@@ -20,7 +20,7 @@ class Anno_xml(object):
             if difficult == 1:
                 continue
             #information for bouding box
-            bnd_box = []
+            bndbox = []
             name = obj.find("name").text.lower().strip()
             bbox = obj.find("bndbox")
             pts = ["xmin", "ymin", "xmax", "ymax"]
@@ -30,10 +30,10 @@ class Anno_xml(object):
                     pixel /= width 
                 else:
                     pixel /= height
-                bnd_box.append(pixel)
+                bndbox.append(pixel)
             label_id = self.classes.index(name)
-            bnd_box.append(label_id)
-            ret += [bnd_box]
+            bndbox.append(label_id)
+            ret += [bndbox]
         
         return np.array(ret) # [[xmin,ymin,xmax, ymax, label_id]]
 
