@@ -209,7 +209,7 @@ def nms(boxes, scores, overlap = 0.45, top_k = 200):
         keep[count] = i
         count += 1
 
-        if id.size(0) == 1:
+        if idx.size(0) == 1:
             break
         idx = idx[:, -1]    # id của các boxes ngoại trừ box có độ tự tin cao nhất
 
