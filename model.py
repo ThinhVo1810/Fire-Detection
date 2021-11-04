@@ -211,7 +211,7 @@ def nms(boxes, scores, overlap = 0.45, top_k = 200):
 
         if idx.size(0) == 1:
             break
-        idx = idx[:, -1]    # id của các boxes ngoại trừ box có độ tự tin cao nhất
+        idx = idx[:-1]    # id của các boxes ngoại trừ box có độ tự tin cao nhất
 
         #information boxes
         torch.index_select(x1, 0, idx, out = tmp_x1)       # lấy ra những thằng có gt trong khoảng idx trong x1
