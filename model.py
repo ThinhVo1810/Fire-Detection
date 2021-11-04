@@ -269,7 +269,7 @@ class Detect(Function):
             # copy conf score cua anh thu i
             conf_scores = conf_preds[i].clone()
 
-            for cl in range(1, num_class):
+            for cl in range(1, num_classe):
                 c_mask = conf_scores[cl].gt(self.conf_thresh)     # chi lay nhung conf > 0.01
                 scores = conf_scores[cl][c_mask]                  # CHỖ NÀY CẦN XEM LẠI
                 if scores.nelement() == 0: # numel
