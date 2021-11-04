@@ -173,7 +173,7 @@ def decode(loc, defbox_list):
     defbox_list[:, 2:] * torch.exp(loc[:, 2:] * 0.2), dim = 1)
 
     boxes[:, :2] -= boxes[:, 2:] / 2 # calculate x_min, y_min
-    boxes[:, 2:] += boxes[:, :2] / 2 # calculate x_max, y_max
+    boxes[:, 2:] += boxes[:, :2]  # calculate x_max, y_max
 
     return boxes
 
