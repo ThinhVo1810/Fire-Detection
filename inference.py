@@ -44,7 +44,7 @@ def predict(img_file_path):
 
     for i in range(detections.size(1)):
         j = 0
-        while detections[0, i, j, 0] >= 0.6:
+        while detections[0, i, j, 0] >= 0.4:
             score = detections[0, i, j, 0]
             pt = (detections[0, i, j, 1:]*scale).cpu().numpy()
             cv2.rectangle(img,
@@ -57,9 +57,10 @@ def predict(img_file_path):
                 font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
             j += 1
     
-    cv2.imshow("Result", img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    #cv2.imshow("Result", img)
+    cv2.imwrite('Result_detect.jpg', img)
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
