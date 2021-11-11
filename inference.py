@@ -64,5 +64,5 @@ def predict(img_file_path):
 
 
 if __name__ == "__main__":
-    img_file_path = "/home/huynth/ImageProcessing/result/Median.jpg"
+    img_file_path = "./result/Median.jpg"
     predict(img_file_path)
