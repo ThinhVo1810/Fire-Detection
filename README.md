@@ -1,5 +1,10 @@
 # Fire Detection using SSD model
 
+## Prerequisites
+
+- Python >= 3.6
+- Pytorch  <= 1.4 
+
 ```
 git clone https://github.com/ThinhVo1810/Fire-Detection.git
 cd Fire-Detection
