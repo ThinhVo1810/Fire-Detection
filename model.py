@@ -169,12 +169,12 @@ def decode(loc, defbox_list):
     defbox_list: [8732, 4]      (cx_d, cy_d, w_d, h_d)
     returns: boxes[xmin, ymin, xmax, ymax]
     '''
-    boxes = torch.cat((defbox_list[:, :2] + 0.1*loc[:, :2]*defbox_list[:, 2:]),
-    defbox_list[:, 2:] * torch.exp(loc[:, 2:] * 0.2), dim = 1)
+    boxes = torch.cat((
+        defbox_list[:, :2] + 0.1*loc[:, :2]*defbox_list[:, 2:],
+        defbox_list[:, 2:]*torch.exp(loc[:,2:]*0.2)), dim=1)
 
-    boxes[:, :2] -= boxes[:, 2:] / 2 # calculate x_min, y_min
-    boxes[:, 2:] += boxes[:, :2]  # calculate x_max, y_max
-
+    boxes[:, :2] -= boxes[:,2:]/2 #calculate xmin, ymin
+    boxes[:, 2:] += boxes[:, :2] #calculate xmax, ymax
     return boxes
 
 def nms(boxes, scores, overlap = 0.45, top_k = 200):
@@ -288,11 +288,11 @@ class Detect(Function):
 if __name__ == "__main__":
 #    vgg = create_vgg()
 #    print(vgg)
-     extras = create_extras()
-     print(extras)
-     loc, conf = create_loc_conf()
-     print(loc)
-     print(conf)
+    # extras = create_extras()
+    # print(extras)
+    # loc, conf = create_loc_conf()
+    # print(loc)
+    # print(conf)
 
      ssd = SSD(phase="train", cfg=cfg)
      print(ssd)
